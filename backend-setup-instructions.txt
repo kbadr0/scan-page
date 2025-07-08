@@ -28,7 +28,6 @@ Create a file called `backend.py` and paste this code:
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -41,20 +40,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class ScanRequest(BaseModel):
-    target: str
-    scan_type: str
-
 @app.get("/")
 def read_root():
     return {"message": "Backend is running!"}
 
 @app.post("/scan")
-async def scan(request: ScanRequest):
+async def scan(target: str, scan_type: str):
     # For now, just return mock data
     return {
-        "target": request.target,
-        "scan_type": request.scan_type,
+        "target": target,
+        "scan_type": scan_type,
         "result": [
             {"cve": "CVE-2023-1234", "desc": "Example Vulnerability"},
             {"cve": "CVE-2022-5678", "desc": "Another Example"}
