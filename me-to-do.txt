@@ -1,0 +1,34 @@
+# ME-TO-DO CHECKLIST (HTML/CSS/JS Version)
+
+## 1. Development
+- [x] Create HTML/CSS/JS frontend (index.html, style.css, script.js)
+- [ ] Test in browser (open index.html)
+- [ ] Update UI or logic as needed
+- [ ] Prepare for backend API integration
+
+## 2. Testing
+- [x] Open index.html in browser
+- [ ] Try different scan types and targets
+- [ ] Confirm loading and result display work
+
+## 3. Push to GitHub
+- [ ] git init (if not already)
+- [ ] git add .
+- [ ] git commit -m "Initial HTML/CSS/JS version"
+- [ ] git remote add origin <your-repo-url>
+- [ ] git push -u origin main
+
+## 4. Deploy on Linux VM (Ubuntu)
+- [ ] Clone repo: `git clone <repo-url>`
+- [ ] Open index.html in browser (or serve with Python/NGINX if needed)
+
+## 5. Next Steps
+- [ ] Implement backend API (Flask/FastAPI)
+- [ ] Connect frontend to backend API
+- [ ] Integrate with OpenVAS/GVM
+
+---
+
+# Notes
+- No Node.js or Python required for frontend testing
+- Update this checklist as you progress 
