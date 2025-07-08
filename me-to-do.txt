@@ -1,34 +1,92 @@
-# ME-TO-DO CHECKLIST (HTML/CSS/JS Version)
+# ME-TO-DO CHECKLIST (Ubuntu, Full History)
 
-## 1. Development
-- [x] Create HTML/CSS/JS frontend (index.html, style.css, script.js)
-- [ ] Test in browser (open index.html)
-- [ ] Update UI or logic as needed
-- [ ] Prepare for backend API integration
+## 1. System Preparation
+- [x] Update system:
+  ```bash
+  sudo apt update && sudo apt upgrade
+  ```
+- [x] Install Python 3, pip, and venv:
+  ```bash
+  sudo apt install python3 python3-pip python3-venv
+  ```
+- [x] Install Docker (if not already):
+  ```bash
+  sudo apt install docker.io
+  sudo systemctl enable --now docker
+  sudo usermod -aG docker $USER  # (log out/in if needed)
+  ```
 
-## 2. Testing
-- [x] Open index.html in browser
-- [ ] Try different scan types and targets
-- [ ] Confirm loading and result display work
+## 2. OpenVAS (GVM) Setup
+- [x] Pull and run OpenVAS Docker container:
+  ```bash
+  docker pull immauss/openvas:22.4.51
+  docker run -d -p 9392:9392 --name openvas immauss/openvas:22.4.51
+  ```
+- [x] Confirm OpenVAS is running and port is mapped:
+  ```bash
+  sudo ss -tulnp | grep 9392
+  # or
+  nc -vz localhost 9392
+  ```
 
-## 3. Push to GitHub
-- [ ] git init (if not already)
-- [ ] git add .
-- [ ] git commit -m "Initial HTML/CSS/JS version"
-- [ ] git remote add origin <your-repo-url>
-- [ ] git push -u origin main
+## 3. Project Setup
+- [x] Clone your GitHub repo:
+  ```bash
+  git clone <your-repo-url>
+  cd <project-folder>
+  ```
+- [x] (If needed) Install git:
+  ```bash
+  sudo apt install git
+  ```
 
-## 4. Deploy on Linux VM (Ubuntu)
-- [ ] Clone repo: `git clone <repo-url>`
-- [ ] Open index.html in browser (or serve with Python/NGINX if needed)
+## 4. Frontend (HTML/CSS/JS)
+- [x] No install needed. Just open `index.html` in your browser to test.
 
-## 5. Next Steps
-- [ ] Implement backend API (Flask/FastAPI)
-- [ ] Connect frontend to backend API
-- [ ] Integrate with OpenVAS/GVM
+## 5. Backend (FastAPI)
+- [x] Create and activate Python virtual environment:
+  ```bash
+  python3 -m venv venv
+  source venv/bin/activate
+  ```
+- [x] Install FastAPI and Uvicorn:
+  ```bash
+  pip install fastapi uvicorn
+  ```
+- [x] Create `backend.py` with FastAPI code (see repo for latest version).
+- [x] Run backend server:
+  ```bash
+  uvicorn backend:app --reload --host 0.0.0.0 --port 8000
+  ```
+- [x] Test backend in browser:
+  - Go to http://localhost:8000 (should see JSON message)
+  - Go to http://localhost:8000/docs to test /scan endpoint
+
+## 6. Test Connection to OpenVAS (GVM)
+- [x] Install python-gvm:
+  ```bash
+  pip install python-gvm
+  ```
+- [x] Create `test_gvm_connection.py`:
+  ```python
+  from gvm.connections import TLSConnection
+  from gvm.protocols.gmp import Gmp
+
+  connection = TLSConnection(hostname='localhost', port=9392)
+  with Gmp(connection) as gmp:
+      gmp.authenticate('admin', 'yourpassword')  # Use your actual GVM credentials
+      version = gmp.get_version()
+      print(version)
+  ```
+- [x] Run the test script:
+  ```bash
+  python test_gvm_connection.py
+  ```
+- [ ] If you see the GVM version, connection is successful!
 
 ---
 
 # Notes
-- No Node.js or Python required for frontend testing
-- Update this checklist as you progress 
+- Replace `<your-repo-url>` and credentials as needed.
+- Update this checklist as you progress.
+- Next: Integrate real scan logic into backend and connect to OpenVAS for live scans. 
