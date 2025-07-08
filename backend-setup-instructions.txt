@@ -1,0 +1,83 @@
+# Backend Setup Instructions (FastAPI + Python)
+
+Follow these steps on your Ubuntu machine (in your project directory):
+
+---
+
+## 1. Set Up Python Virtual Environment
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+---
+
+## 2. Install FastAPI and Uvicorn
+
+```bash
+pip install fastapi uvicorn
+```
+
+---
+
+## 3. Create the Backend App
+
+Create a file called `backend.py` and paste this code:
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Allow your HTML frontend to call the API (CORS)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, set this to your frontend's URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+def read_root():
+    return {"message": "Backend is running!"}
+
+@app.post("/scan")
+async def scan(target: str, scan_type: str):
+    # For now, just return mock data
+    return {
+        "target": target,
+        "scan_type": scan_type,
+        "result": [
+            {"cve": "CVE-2023-1234", "desc": "Example Vulnerability"},
+            {"cve": "CVE-2022-5678", "desc": "Another Example"}
+        ]
+    }
+```
+
+---
+
+## 4. Run the Backend Server
+
+```bash
+uvicorn backend:app --reload --host 0.0.0.0 --port 8000
+```
+
+- The API will be available at: http://localhost:8000
+
+---
+
+## 5. Test the Backend
+
+- Open your browser and go to: http://localhost:8000
+  - You should see: {"message":"Backend is running!"}
+- For the `/scan` endpoint, go to: http://localhost:8000/docs
+  - You can test the API interactively here.
+
+---
+
+## 6. Next Steps
+- Connect the frontend to this backend (update script.js to POST to /scan)
+- Integrate with OpenVAS using python-gvm or gvm-tools 
