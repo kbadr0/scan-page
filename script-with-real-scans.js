@@ -1,7 +1,6 @@
 document.getElementById('scan-form').addEventListener('submit', async function(e) {
   e.preventDefault();
   const target = document.getElementById('target').value;
-  const scanType = document.getElementById('scan-type').value;
   const loading = document.getElementById('loading');
   const result = document.getElementById('result');
 
@@ -15,7 +14,7 @@ document.getElementById('scan-form').addEventListener('submit', async function(e
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ target: target, scan_type: scanType })
+      body: JSON.stringify({ target: target })
     });
 
     if (!response.ok) {
@@ -29,7 +28,7 @@ document.getElementById('scan-form').addEventListener('submit', async function(e
     }
 
     const taskId = scanData.task_id;
-    result.textContent = `Scan started! Task ID: ${taskId}\nStatus: ${scanData.status}\n\nMonitoring scan progress...`;
+    result.textContent = `Scan started! Target: ${target}\nTask ID: ${taskId}\nStatus: ${scanData.status}\n\nMonitoring scan progress...`;
 
     // Step 2: Poll for scan completion
     let attempts = 0;
@@ -50,7 +49,7 @@ document.getElementById('scan-form').addEventListener('submit', async function(e
         }
         
         // Update status
-        result.textContent = `Scan in progress...\nTask ID: ${taskId}\nStatus: ${statusData.status}\nAttempts: ${attempts}/${maxAttempts}`;
+        result.textContent = `Scan in progress...\nTarget: ${target}\nTask ID: ${taskId}\nStatus: ${statusData.status}\nAttempts: ${attempts}/${maxAttempts}`;
         
         // Check if scan is complete
         if (statusData.status === 'Done') {
@@ -63,7 +62,7 @@ document.getElementById('scan-form').addEventListener('submit', async function(e
           loading.style.display = 'none';
           
           if (resultsData.status === 'completed') {
-            let output = `Scan complete!\nTarget: ${target}\nType: ${scanType}\nTask ID: ${taskId}\n\n`;
+            let output = `Scan complete!\nTarget: ${target}\nTask ID: ${taskId}\n\n`;
             
             if (resultsData.vulnerabilities && resultsData.vulnerabilities.length > 0) {
               output += `Vulnerabilities found (${resultsData.vulnerabilities.length}):\n`;

@@ -18,8 +18,7 @@ app.add_middleware(
 )
 
 class ScanRequest(BaseModel):
-    target: str
-    scan_type: str
+    target: str  # Just the IP address
 
 # OpenVAS connection settings
 OPENVAS_HOST = 'localhost'
@@ -61,7 +60,7 @@ def test_openvas_connection():
 
 @app.post("/scan")
 async def scan(request: ScanRequest):
-    """Start a real scan using OpenVAS"""
+    """Start a scan using OpenVAS - simplified like task wizard"""
     try:
         connection = get_gmp_connection()
         
@@ -71,33 +70,23 @@ async def scan(request: ScanRequest):
             # Create a unique name for this scan
             scan_name = f"scan_{request.target}_{int(time.time())}"
             
-            # Create target
+            # Create target (like task wizard)
             target_response = gmp.create_target(
                 name=f"target_{request.target}",
                 hosts=[request.target],
-                comment=f"Target for {request.target}"
+                comment=f"Auto-created target for {request.target}"
             )
             target_id = target_response.get('id')
             
-            # Get scan config based on scan type
-            scan_configs = gmp.get_scan_configs()
-            config_id = None
+            # Use default "Full and fast" scan config (most common)
+            config_id = 'daba56c8-73ec-11df-a475-002264764cea'  # Full and fast
             
-            # Map scan types to OpenVAS configs
-            scan_type_mapping = {
-                'full': 'daba56c8-73ec-11df-a475-002264764cea',  # Full and fast
-                'fast': 'daba56c8-73ec-11df-a475-002264764cea',  # Full and fast
-                'discovery': '698f691e-7489-11df-9d8c-002264764cea'  # Discovery
-            }
-            
-            config_id = scan_type_mapping.get(request.scan_type, 'daba56c8-73ec-11df-a475-002264764cea')
-            
-            # Create task
+            # Create task (like task wizard)
             task_response = gmp.create_task(
                 name=scan_name,
                 config_id=config_id,
                 target_id=target_id,
-                comment=f"Scan of {request.target}"
+                comment=f"Auto-created scan for {request.target}"
             )
             task_id = task_response.get('id')
             
@@ -106,16 +95,14 @@ async def scan(request: ScanRequest):
             
             return {
                 "target": request.target,
-                "scan_type": request.scan_type,
                 "task_id": task_id,
                 "status": "started",
-                "message": f"Scan started successfully. Task ID: {task_id}"
+                "message": f"Scan started successfully for {request.target}. Task ID: {task_id}"
             }
             
     except Exception as e:
         return {
             "target": request.target,
-            "scan_type": request.scan_type,
             "status": "error",
             "message": f"Failed to start scan: {str(e)}"
         }

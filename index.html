@@ -10,17 +10,12 @@
   <div class="container">
     <h1>Vulnerability Scanner</h1>
     <form id="scan-form">
-      <input type="text" id="target" placeholder="Target IP or domain" required />
-      <select id="scan-type">
-        <option value="full">Full</option>
-        <option value="fast">Fast</option>
-        <option value="discovery">Discovery</option>
-      </select>
+      <input type="text" id="target" placeholder="Enter IP address (e.g., 192.168.1.1)" required />
       <button type="submit" id="start-btn">Start Scan</button>
     </form>
     <div id="loading" class="loading" style="display:none;">Scanning in progress…</div>
     <pre id="result" class="result"></pre>
   </div>
-  <script src="script.js"></script>
+  <script src="script-with-real-scans.js"></script>
 </body>
 </html> 
