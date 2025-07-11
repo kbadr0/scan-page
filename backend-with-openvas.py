@@ -5,6 +5,7 @@ from gvm.connections import TLSConnection
 from gvm.protocols.gmp import Gmp
 import time
 import uuid
+import xml.etree.ElementTree as ET
 
 app = FastAPI()
 
@@ -42,6 +43,27 @@ def authenticate_gmp(gmp):
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
 
+def extract_id_from_response(response):
+    """Extract ID from GMP response (handles both string and XML)"""
+    if isinstance(response, str):
+        # Parse XML string
+        try:
+            root = ET.fromstring(response)
+            # Look for id attribute in the root element
+            return root.get('id')
+        except ET.ParseError:
+            # If it's not XML, try to extract ID from string
+            if 'id=' in response:
+                import re
+                match = re.search(r'id="([^"]+)"', response)
+                if match:
+                    return match.group(1)
+    elif hasattr(response, 'get'):
+        # It's already a parsed object
+        return response.get('id')
+    
+    return None
+
 @app.get("/")
 def read_root():
     return {"message": "Backend is running!"}
@@ -71,27 +93,62 @@ async def scan(request: ScanRequest):
             scan_name = f"scan_{request.target}_{int(time.time())}"
             
             # Create target (like task wizard)
-            target_response = gmp.create_target(
-                name=f"target_{request.target}",
-                hosts=[request.target],
-                comment=f"Auto-created target for {request.target}"
-            )
-            target_id = target_response.get('id')
+            try:
+                target_response = gmp.create_target(
+                    name=f"target_{request.target}",
+                    hosts=[request.target],
+                    comment=f"Auto-created target for {request.target}"
+                )
+                target_id = extract_id_from_response(target_response)
+                
+                if not target_id:
+                    return {
+                        "target": request.target,
+                        "status": "error",
+                        "message": f"Failed to create target: {target_response}"
+                    }
+            except Exception as e:
+                return {
+                    "target": request.target,
+                    "status": "error",
+                    "message": f"Failed to create target: {str(e)}"
+                }
             
             # Use default "Full and fast" scan config (most common)
             config_id = 'daba56c8-73ec-11df-a475-002264764cea'  # Full and fast
             
             # Create task (like task wizard)
-            task_response = gmp.create_task(
-                name=scan_name,
-                config_id=config_id,
-                target_id=target_id,
-                comment=f"Auto-created scan for {request.target}"
-            )
-            task_id = task_response.get('id')
+            try:
+                task_response = gmp.create_task(
+                    name=scan_name,
+                    config_id=config_id,
+                    target_id=target_id,
+                    comment=f"Auto-created scan for {request.target}"
+                )
+                task_id = extract_id_from_response(task_response)
+                
+                if not task_id:
+                    return {
+                        "target": request.target,
+                        "status": "error",
+                        "message": f"Failed to create task: {task_response}"
+                    }
+            except Exception as e:
+                return {
+                    "target": request.target,
+                    "status": "error",
+                    "message": f"Failed to create task: {str(e)}"
+                }
             
             # Start the task
-            gmp.start_task(task_id)
+            try:
+                gmp.start_task(task_id)
+            except Exception as e:
+                return {
+                    "target": request.target,
+                    "status": "error",
+                    "message": f"Failed to start task: {str(e)}"
+                }
             
             return {
                 "target": request.target,
