@@ -13,10 +13,10 @@ This platform consists of:
 ## 🏗️ Architecture
 
 ```
-┌─────────────────┐    HTTP     ┌─────────────────┐    GMP API    ┌─────────────────┐
-│   HTML Frontend │ ──────────→ │  FastAPI Backend│ ──────────→   │  OpenVAS Docker │
-│   (index.html)  │             │   (backend.py)  │               │   (port 9390)   │
-└─────────────────┘             └─────────────────┘               └─────────────────┘
+┌───────────────────┐    HTTP     ┌───────────────────┐    GMP API    ┌───────────────────┐
+│   HTML Frontend   │ ─────────→ │  FastAPI Backend  │ ─────────→   │  OpenVAS Docker   │
+│   (index.html)    │             │   (backend.py)    │               │   (port 9390)     │
+└───────────────────┘             └───────────────────┘               └───────────────────┘
 ```
 
 ## 🚀 Features
@@ -35,21 +35,10 @@ This platform consists of:
 - Python 3.8+
 - Git
 
-## 🛠️ Installation & Setup
+## ⚙️ Installation & Setup
 
-### Option 1: Automated Setup (Recommended)
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd <project-folder>
-
-# Make setup script executable and run it
-chmod +x setup-ubuntu.sh
-./setup-ubuntu.sh
-```
-
-### Option 2: Manual Setup
-Follow the steps in `me-to-do.txt` for detailed manual installation.
+### Manual Setup (Recommended)
+Follow the steps in `me-to-do.txt` and `backend-setup-instructions.txt` for detailed manual installation and backend setup.
 
 ## 🎮 How to Use
 
@@ -77,19 +66,17 @@ uvicorn backend:app --reload --host 0.0.0.0 --port 8000
 ```
 ├── index.html                    # Main frontend interface
 ├── style.css                     # Frontend styling
-├── script-with-real-scans.js     # Frontend logic (real scans)
-├── backend.py                    # FastAPI backend (mock data)
-├── backend-with-openvas.py       # FastAPI backend (real OpenVAS)
-├── setup-ubuntu.sh              # Automated Ubuntu setup script
-├── me-to-do.txt                 # Detailed setup checklist
+├── script.js                     # Frontend logic (real scans)
+├── backend.py                    # FastAPI backend (real OpenVAS)
+├── me-to-do.txt                  # Detailed setup checklist
 ├── backend-setup-instructions.txt # Backend setup guide
-└── README.md                    # This file
+├── README.md                     # This file
 ```
 
 ## 🔧 Configuration
 
 ### OpenVAS Connection Settings
-In `backend-with-openvas.py`:
+In `backend.py`:
 ```python
 OPENVAS_HOST = 'localhost'    # OpenVAS Docker container
 OPENVAS_PORT = 9390          # GMP API port
@@ -110,7 +97,7 @@ OPENVAS_PASS = 'admin'       # Default password
 - `GET /scan-status/{task_id}` - Check scan progress
 - `GET /scan-results/{task_id}` - Get completed scan results
 
-## 🐛 Troubleshooting
+## 🐞 Troubleshooting
 
 ### Common Issues
 
@@ -162,4 +149,9 @@ MIT License - Feel free to use and modify for your needs.
 
 ---
 
-**🎉 You now have a complete, working vulnerability scanner that integrates with real OpenVAS scans!** 
+**🎉 You now have a complete, working vulnerability scanner that integrates with real OpenVAS scans!**
+
+---
+
+**Note:**
+- For step-by-step setup and troubleshooting, see `me-to-do.txt` and `backend-setup-instructions.txt` in this repository.

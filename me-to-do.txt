@@ -20,12 +20,14 @@
 - [x] Pull and run OpenVAS Docker container:
   ```bash
   docker pull immauss/openvas:22.4.51
-  docker run -d -p 9392:9392 --name openvas immauss/openvas:22.4.51
+  docker run -d -p 9390:9390 -p 9392:9392 --name openvas immauss/openvas:22.4.51
   ```
-- [x] Confirm OpenVAS is running and port is mapped:
+- [x] Confirm OpenVAS is running and ports are mapped:
   ```bash
+  sudo ss -tulnp | grep 9390
   sudo ss -tulnp | grep 9392
   # or
+  nc -vz localhost 9390
   nc -vz localhost 9392
   ```
 
@@ -49,11 +51,11 @@
   python3 -m venv venv
   source venv/bin/activate
   ```
-- [x] Install FastAPI and Uvicorn:
+- [x] Install FastAPI, Uvicorn, and python-gvm:
   ```bash
-  pip install fastapi uvicorn
+  pip install fastapi uvicorn python-gvm
   ```
-- [x] Create `backend.py` with FastAPI code (see repo for latest version).
+- [x] Use the provided `backend.py` from the repo (already set up for real OpenVAS scans).
 - [x] Run backend server:
   ```bash
   uvicorn backend:app --reload --host 0.0.0.0 --port 8000
@@ -63,16 +65,12 @@
   - Go to http://localhost:8000/docs to test /scan endpoint
 
 ## 6. Test Connection to OpenVAS (GVM)
-- [x] Install python-gvm:
-  ```bash
-  pip install python-gvm
-  ```
-- [x] Create `test_gvm_connection.py`:
+- [x] Create `test_gvm_connection.py` (optional, for troubleshooting):
   ```python
   from gvm.connections import TLSConnection
   from gvm.protocols.gmp import Gmp
 
-  connection = TLSConnection(hostname='localhost', port=9392)
+  connection = TLSConnection(hostname='localhost', port=9390)  # Use 9390 for GMP API
   with Gmp(connection) as gmp:
       gmp.authenticate('admin', 'yourpassword')  # Use your actual GVM credentials
       version = gmp.get_version()
@@ -89,4 +87,4 @@
 # Notes
 - Replace `<your-repo-url>` and credentials as needed.
 - Update this checklist as you progress.
-- Next: Integrate real scan logic into backend and connect to OpenVAS for live scans. 
+- Next: Use the real scan logic in `backend.py` to connect to OpenVAS for live scans. 
