@@ -1,3 +1,4 @@
+/* --- General body styles for dark theme and layout --- */
 body {
   background: #23272f;
   color: #fff;
@@ -6,6 +7,7 @@ body {
   min-height: 100vh;
 }
 
+/* --- Main container for centering content and card look --- */
 .container {
   max-width: 400px;
   margin: 4rem auto;
@@ -18,6 +20,7 @@ body {
   align-items: center;
 }
 
+/* --- Title styles --- */
 h1 {
   margin-bottom: 2rem;
   font-size: 2rem;
@@ -25,6 +28,7 @@ h1 {
   letter-spacing: 1px;
 }
 
+/* --- Scan form layout and input styles --- */
 #scan-form {
   display: flex;
   flex-direction: column;
@@ -60,6 +64,7 @@ h1 {
   cursor: not-allowed;
 }
 
+/* --- Loading indicator styles --- */
 .loading {
   margin-top: 1.5rem;
   color: #ffe066;
@@ -67,6 +72,7 @@ h1 {
   font-size: 1.1rem;
 }
 
+/* --- Result area styles --- */
 .result {
   margin-top: 1.5rem;
   background: #181b20;
@@ -80,6 +86,7 @@ h1 {
   box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
 }
 
+/* --- Scan list styles for displaying running/completed scans --- */
 #scan-list {
   max-width: 700px;
   width: 100%;
@@ -98,3 +105,136 @@ h1 {
   font-size: 1.1rem;
   width: 100%;
 } 
+
+
+
+
+
+
+.scan-item {
+    margin-bottom: 1rem;
+    background: #222;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+    background: #222;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    position: relative;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.results-table th, 
+.results-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+}
+
+.severity-high { color: #dc3545; }
+.severity-medium { color: #fd7e14; }
+.severity-low { color: #ffc107; }
+.severity-info { color: #6c757d; }
+
+.action-btn {
+    margin: 0 5px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: opacity 0.3s ease;
+}
+
+.action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.stop-btn { background-color: #dc3545; }
+.download-btn { background-color: #007bff; }
+.view-btn { background-color: #ffc107; color: #212529; }
+.delete-btn { background-color: #6c757d; }
+
+
+
+/* ----------------------------NMAP--------------------------------*/
+/*
+.network-scan-btn {
+    margin: 15px 0;
+    padding: 10px 15px;
+    font-size: 16px;
+}
+
+.scan-summary {
+    background: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    line-height: 1.6;
+}
+
+.scan-summary strong {
+    color: #495057;
+}
+
+.table-container {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-up {
+    color: #28a745;
+}
+
+.status-up .status-indicator {
+    background: #28a745;
+}
+
+.status-down {
+    color: #dc3545;
+}
+
+.status-down .status-indicator {
+    background: #dc3545;
+}
+
+.modal-actions {
+    text-align: right;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+*/
