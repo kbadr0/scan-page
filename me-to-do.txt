@@ -56,6 +56,10 @@
   ```bash
   pip install fastapi uvicorn python-gvm
   ```
+- [x] Install python-nmap for network scanning:
+  ```bash
+  pip install python-nmap
+  ```
 - [x] Use the provided `backend.py` from the repo (already set up for real OpenVAS scans).
 - [x] Run backend server:
   ```bash

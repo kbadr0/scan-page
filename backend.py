@@ -13,6 +13,8 @@ import tempfile
 import os
 import smtplib
 from email.message import EmailMessage
+import nmap
+import ipaddress
 
 # --- Initialize FastAPI app and configure CORS to allow frontend requests ---
 app = FastAPI()
@@ -28,11 +30,12 @@ app.add_middleware(
 
 # --- Data model for scan requests (expects an IP address as 'target') ---
 class ScanRequest(BaseModel):
-    target: str  # Just the IP address
+    target: str  # IP address or network range
     email: str = None  # Optional email address
+    scan_type: str = "single"  # "single" or "network"
 
 # --- OpenVAS connection and scan configuration constants ---
-OPENVAS_HOST = '192.168.200.240'  # Ubuntu VM IP
+OPENVAS_HOST = '192.168.1.38'  # Ubuntu VM IP
 OPENVAS_PORT = 9390
 OPENVAS_USER = 'admin'
 OPENVAS_PASS = 'admin'
@@ -251,7 +254,72 @@ def test_openvas_connection():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-
+###################################################################################################
+# --- Endpoint: Scan network with Nmap and return live hosts ---
+@app.get("/nmap-scan")
+async def nmap_scan(ip_range: str):
+    """
+    Scan a network range with Nmap and return live hosts as a simple list
+    Returns: IP addresses, one per line
+    """
+    try:
+        # Validate IP range
+        network = ipaddress.ip_network(ip_range, strict=False)
+        print(f"[DEBUG] Scanning network: {network}")
+        
+        # Use subprocess to run nmap command like the manual script
+        import subprocess
+        import re
+        
+        # Run nmap with the exact same method as the manual script (3 passes)
+        print(f"[DEBUG] Running nmap scan for {ip_range} (3 passes like manual script)")
+        
+        all_hosts = set()
+        
+        # Run 3 passes like the manual script
+        for i in range(1, 4):
+            print(f"[DEBUG] Pass {i}...")
+            result = subprocess.run(
+                ['/usr/bin/nmap', '-sn', ip_range],
+                capture_output=True,
+                text=True,
+                timeout=300,
+                env={'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}
+            )
+            
+            if result.returncode != 0:
+                print(f"[DEBUG] Pass {i} failed: {result.stderr}")
+                continue
+            
+            # Parse output exactly like the manual script
+            for line in result.stdout.split('\n'):
+                if 'Nmap scan report for' in line:
+                    # Extract IP address using the same regex as manual script
+                    match = re.search(r'(\d+\.\d+\.\d+\.\d+)', line)
+                    if match:
+                        ip = match.group(1)
+                        # Check if host is up (look for "Host is up" in following lines)
+                        all_hosts.add(ip)
+        
+        # Convert to sorted list
+        live_hosts = sorted(list(all_hosts))
+        
+        print(f"[DEBUG] Found {len(live_hosts)} live hosts: {live_hosts}")
+        
+        # Return as simple text with one IP per line
+        ip_list = '\n'.join(live_hosts)
+        
+        return {
+            "status": "success",
+            "network": str(network),
+            "hosts_found": len(live_hosts),
+            "ip_list": ip_list,  # Simple text with one IP per line
+            "hosts": live_hosts   # Also return as array for flexibility
+        }
+        
+    except Exception as e:
+        print(f"[DEBUG] Nmap scan failed: {e}")
+        raise HTTPException(status_code=400, detail=f"Nmap scan failed: {str(e)}")
 
 ###################################################################################################
 # --- Endpoint: Start a new scan ---
@@ -259,9 +327,10 @@ def test_openvas_connection():
 task_email_map = {}
 @app.post("/scan")
 async def scan(request: ScanRequest, background_tasks: BackgroundTasks):
-    # Main endpoint called by frontend to start a scan for a given IP
+    # Main endpoint called by frontend to start a scan for a given IP or network
     # Handles target creation, task creation, and scan start
-    print(f"[DEBUG] /scan called with target: {request.target}")
+    print(f"[DEBUG] /scan called with target: {request.target}, scan_type: {request.scan_type}")
+    
     try:
         connection = get_gmp_connection()
         print(f"[DEBUG] Got GMP connection: {connection}")
@@ -270,19 +339,80 @@ async def scan(request: ScanRequest, background_tasks: BackgroundTasks):
             authenticate_gmp(gmp)
             print(f"[DEBUG] Authenticated with GVM")
             
-            # Create a unique name for this scan
-            scan_name = f"scan_{request.target}_{int(time.time())}"
-            print(f"[DEBUG] scan_name: {scan_name}")
+            # Handle network scan vs single IP scan
+            if request.scan_type == "network":
+                # For network scans, first get live hosts with Nmap
+                print(f"[DEBUG] Processing network scan for: {request.target}")
+                
+                # Use subprocess to run nmap command like the manual script
+                import subprocess
+                import re
+                
+                # Run nmap with the exact same method as the manual script (3 passes)
+                print(f"[DEBUG] Running nmap scan for {request.target} (3 passes like manual script)")
+                
+                all_hosts = set()
+                
+                # Run 3 passes like the manual script
+                for i in range(1, 4):
+                    print(f"[DEBUG] Pass {i}...")
+                    result = subprocess.run(
+                        ['/usr/bin/nmap', '-sn', request.target],
+                        capture_output=True,
+                        text=True,
+                        timeout=300,
+                        env={'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}
+                    )
+                    
+                    if result.returncode != 0:
+                        print(f"[DEBUG] Pass {i} failed: {result.stderr}")
+                        continue
+                    
+                    # Parse output exactly like the manual script
+                    for line in result.stdout.split('\n'):
+                        if 'Nmap scan report for' in line:
+                            # Extract IP address using the same regex as manual script
+                            match = re.search(r'(\d+\.\d+\.\d+\.\d+)', line)
+                            if match:
+                                ip = match.group(1)
+                                # Check if host is up (look for "Host is up" in following lines)
+                                all_hosts.add(ip)
+                
+                # Convert to sorted list
+                live_hosts = sorted(list(all_hosts))
+                
+                if not live_hosts:
+                    return {
+                        "target": request.target,
+                        "status": "error",
+                        "message": f"No live hosts found in network {request.target}"
+                    }
+                
+                print(f"[DEBUG] Found {len(live_hosts)} live hosts: {live_hosts}")
+                
+                # Create target with all live hosts
+                target_hosts = live_hosts
+                target_name = f"network_{request.target.replace('/', '_')}_{int(time.time())}"
+                scan_name = f"network_scan_{request.target.replace('/', '_')}_{int(time.time())}"
+                
+            else:
+                # Single IP scan (existing logic)
+                target_hosts = [request.target]
+                target_name = f"target_{request.target}"
+                scan_name = f"scan_{request.target}_{int(time.time())}"
             
-            # Check if target already exists
-            target_id = find_existing_target_id(gmp, request.target)
-            print(f"[DEBUG] Existing target_id for {request.target}: {target_id}")
+            # Check if target already exists (for single IP only)
+            target_id = None
+            if request.scan_type == "single":
+                target_id = find_existing_target_id(gmp, request.target)
+                print(f"[DEBUG] Existing target_id for {request.target}: {target_id}")
+            
             if not target_id:
-                # Create target (like task wizard)
+                # Create target
                 try:
                     target_response = gmp.create_target(
-                        name=f"target_{request.target}",
-                        hosts=[request.target],
+                        name=target_name,
+                        hosts=target_hosts,
                         port_list_id=DEFAULT_PORT_LIST_ID,
                         comment=f"Auto-created target for {request.target}"
                     )
@@ -326,7 +456,7 @@ async def scan(request: ScanRequest, background_tasks: BackgroundTasks):
             config_id = DEFAULT_SCAN_CONFIG_ID
             print(f"[DEBUG] config_id: {config_id}")
             
-            # Create task (like task wizard)
+            # Create task
             try:
                 task_response = gmp.create_task(
                     name=scan_name,
@@ -741,78 +871,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-'''
-        
-        
-# Add to imports
-import nmap
-import ipaddress
-from fastapi import Query
-import socket
-
-
-
-
-# Add new endpoint for Nmap scan
-@app.get("/nmap-scan")
-async def nmap_scan(ip_range: str = Query(..., description="IP range to scan (e.g., 192.168.1.0/24)")):
-    try:
-        # Validate IP range
-        network = ipaddress.ip_network(ip_range, strict=False)
-        
-        # Initialize Nmap scanner
-        nm = nmap.PortScanner()
-        
-        # Run scan (adjust arguments as needed)
-        nm.scan(hosts=ip_range, arguments='-sn -T4')  # Ping scan (no port scan)
-        
-        # Process results
-        scan_results = []
-        for host in nm.all_hosts():
-            host_info = {
-                'ip': host,
-                'status': nm[host].state(),
-                'hostname': nm[host].hostname(),
-            }
-            scan_results.append(host_info)
-        
-        return {
-            "status": "success",
-            "network": str(network),
-            "hosts_found": len(scan_results),
-            "results": scan_results
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Nmap scan failed: {str(e)}")
-
-# Add endpoint to detect local network
-def get_local_network():
-    try:
-        # Create a dummy socket to get local IP
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))  # Google DNS
-        local_ip = s.getsockname()[0]
-        s.close()
-        
-        # Assume typical /24 network
-        network = ipaddress.IPv4Network(f"{local_ip}/24", strict=False)
-        return {
-            "client_ip": local_ip,
-            "network": str(network)
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-@app.get("/detect-network")
-async def detect_network():
-    result = get_local_network()
-    if "error" in result:
-        raise HTTPException(status_code=400, detail=result["error"])
-    return result
-        
-'''        
         
 ###################################################################################################
 # --- Main entry point for running with Uvicorn (for development) ---

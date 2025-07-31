@@ -11,9 +11,17 @@
   <div class="container">
     <!-- Main title/header -->
     <h1>Vulnerability Scanner</h1>
-    <!-- Scan form: User enters IP address to scan -->
+    <!-- Scan form: User enters IP address or network to scan -->
     <form id="scan-form">
+      <!-- Scan type selection dropdown -->
+      <select id="scan-type" required>
+        <option value="single">Single IP Address</option>
+        <option value="network">Network Range (CIDR)</option>
+      </select>
+      
+      <!-- Input field for target (IP or network) -->
       <input type="text" id="target" placeholder="Enter IP address (e.g., 192.168.1.1)" required />
+      
       <input type="email" id="email" placeholder="Enter your email (for PDF report)" required />
       <button type="submit" id="start-btn">Start Scan</button>
     </form>

@@ -28,9 +28,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load any saved scans from localStorage
     loadScansFromStorage();
     
+    // Set up scan type dropdown handler
+    setupScanTypeHandler();
+    
     // Uncomment to add the test connection button
     // addTestButton();
 });
+
+// ======================
+// SCAN TYPE HANDLING
+// ======================
+
+/**
+ * Sets up the scan type dropdown to change input placeholder and validation
+ */
+function setupScanTypeHandler() {
+    const scanTypeSelect = document.getElementById('scan-type');
+    const targetInput = document.getElementById('target');
+    
+    scanTypeSelect.addEventListener('change', function() {
+        if (this.value === 'network') {
+            targetInput.placeholder = 'Enter network range (e.g., 192.168.200.0/24)';
+            targetInput.pattern = '^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}$';
+        } else {
+            targetInput.placeholder = 'Enter IP address (e.g., 192.168.1.1)';
+            targetInput.pattern = '^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$';
+        }
+    });
+    
+    // Trigger initial setup
+    scanTypeSelect.dispatchEvent(new Event('change'));
+}
 
 // ======================
 // SCAN MANAGEMENT
@@ -38,14 +66,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /**
  * Handles scan form submission
- * Starts a new vulnerability scan
+ * Starts a new vulnerability scan (single IP or network)
  */
 document.getElementById('scan-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     // Get form inputs
+    const scanType = document.getElementById('scan-type').value;
     const target = document.getElementById('target').value;
     const email = document.getElementById('email').value;
+    
+    // Validate input based on scan type
+    if (scanType === 'network') {
+        // Validate network format (CIDR notation)
+        const networkRegex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/;
+        if (!networkRegex.test(target)) {
+            document.getElementById('result').textContent = 'Error: Please enter a valid network range (e.g., 192.168.200.0/24)';
+            return;
+        }
+    } else {
+        // Validate IP address format
+        const ipRegex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+        if (!ipRegex.test(target)) {
+            document.getElementById('result').textContent = 'Error: Please enter a valid IP address (e.g., 192.168.1.1)';
+            return;
+        }
+    }
     
     // UI feedback
     document.getElementById('loading').style.display = 'block';
@@ -53,10 +99,14 @@ document.getElementById('scan-form').addEventListener('submit', async function(e
     
     try {
         // Call backend to start scan
-        const response = await fetch('http://localhost:8000/scan', {
+        const response = await fetch('/api/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target, email })
+            body: JSON.stringify({ 
+                target, 
+                email, 
+                scan_type: scanType 
+            })
         });
         
         if (!response.ok) throw new Error('Failed to start scan');
@@ -146,7 +196,7 @@ function addScanToList({ target, taskId, status }, skipSave = false) {
  */
 async function pollScanStatus(taskId, target, li) {
     try {
-        const response = await fetch(`http://localhost:8000/scan-status/${taskId}`);
+        const response = await fetch(`/api/scan-status/${taskId}`);
         if (!response.ok) throw new Error('Status check failed');
         
         const statusData = await response.json();
@@ -183,7 +233,7 @@ async function pollScanStatus(taskId, target, li) {
  */
 async function stopScan(taskId, li) {
     try {
-        await fetch(`http://localhost:8000/stop-scan/${taskId}`, { method: 'POST' });
+        await fetch(`/api/stop-scan/${taskId}`, { method: 'POST' });
         
         // Update UI
         clearInterval(scans[taskId].interval);
@@ -204,7 +254,7 @@ async function stopScan(taskId, li) {
  */
 async function downloadReport(taskId) {
     try {
-        const response = await fetch(`http://localhost:8000/download-report/${taskId}`);
+        const response = await fetch(`/api/download-report/${taskId}`);
         if (!response.ok) throw new Error('Report not available');
         
         const blob = await response.blob();
@@ -295,7 +345,7 @@ async function showResultsInModal(taskId, target) {
     
     try {
         // Fetch results
-        const response = await fetch(`http://localhost:8000/scan-results/${taskId}`);
+        const response = await fetch(`/api/scan-results/${taskId}`);
         const data = await response.json();
         
         // Handle no vulnerabilities case
@@ -416,7 +466,7 @@ function addTestButton() {
         resultEl.textContent = 'Testing...';
         
         try {
-            const response = await fetch('http://localhost:8000/test-connection');
+            const response = await fetch('/api/test-connection');
             const data = await response.json();
             resultEl.textContent = data.status === 'success' 
                 ? `✓ Connected to OpenVAS ${data.version}`
