@@ -51,4 +51,8 @@ uvicorn backend:app --reload --host 0.0.0.0 --port 8000
 ## 6. Next Steps
 - Connect the frontend to this backend (open `index.html` in your browser)
 - Use the web UI to start scans and view results
-- For troubleshooting or advanced setup, see `me-to-do.txt` 
+- For troubleshooting or advanced setup, see `me-to-do.txt`
+
+---
+
+**Note:** The backend is stateless. If you restart the backend server, it will not remember previous scans. The frontend will still show your scans and try to update their status, but may show errors if the backend cannot find them. 

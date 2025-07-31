@@ -44,6 +44,7 @@
 
 ## 4. Frontend (HTML/CSS/JS)
 - [x] No install needed. Just open `index.html` in your browser to test.
+- [x] The scan list is now saved in your browser (localStorage). Refreshing the page will keep your scan history.
 
 ## 5. Backend (FastAPI)
 - [x] Create and activate Python virtual environment:
@@ -63,6 +64,7 @@
 - [x] Test backend in browser:
   - Go to http://localhost:8000 (should see JSON message)
   - Go to http://localhost:8000/docs to test /scan endpoint
+- [x] Note: The backend does not save scan state between restarts. If you restart the backend, the frontend will still show your scans, but the backend will not remember them.
 
 ## 6. Test Connection to OpenVAS (GVM)
 - [x] Create `test_gvm_connection.py` (optional, for troubleshooting):

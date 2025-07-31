@@ -10,6 +10,8 @@ This platform consists of:
 - **Scanner**: OpenVAS/GVM running in Docker container
 - **Workflow**: Enter IP → Auto-create target → Auto-create task → Run scan → Get results
 
+- **Scan History Persistence**: Your scan list is now saved in your browser (localStorage). If you refresh the page, your scans will reappear and continue updating.
+
 ## 🏗️ Architecture
 
 ```
@@ -27,6 +29,7 @@ This platform consists of:
 - ✅ **Real-time Progress Monitoring**: Watch scan status updates
 - ✅ **Complete Results**: Get actual vulnerability findings
 - ✅ **Docker-based**: Easy deployment with OpenVAS container
+- ✅ **Scan History Persistence**: Scans are saved in your browser (localStorage). Refreshing the page keeps your scan list and status updates.
 
 ## 📋 Prerequisites
 
@@ -60,6 +63,8 @@ uvicorn backend:app --reload --host 0.0.0.0 --port 8000
 - Enter an IP address (e.g., `192.168.1.1`)
 - Click "Start Scan"
 - Watch the real-time progress and results!
+
+- **Note:** The backend is stateless. If you restart the backend server, it will not remember previous scans. The frontend will still show your scans and try to update their status, but may show errors if the backend cannot find them.
 
 ## 📁 Project Structure
 
@@ -155,3 +160,6 @@ MIT License - Feel free to use and modify for your needs.
 
 **Note:**
 - For step-by-step setup and troubleshooting, see `me-to-do.txt` and `backend-setup-instructions.txt` in this repository.
+
+## 🕵️‍♂️ Optional: Nmap/Network Scan Feature
+- The code includes a network scan feature using Nmap, which can be enabled in `script.js` (see commented section at the end of the file). This allows you to discover live hosts on your network before scanning them with OpenVAS.

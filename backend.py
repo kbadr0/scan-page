@@ -32,7 +32,7 @@ class ScanRequest(BaseModel):
     email: str = None  # Optional email address
 
 # --- OpenVAS connection and scan configuration constants ---
-OPENVAS_HOST = '192.168.1.40'  # Ubuntu VM IP
+OPENVAS_HOST = '192.168.200.240'  # Ubuntu VM IP
 OPENVAS_PORT = 9390
 OPENVAS_USER = 'admin'
 OPENVAS_PASS = 'admin'

@@ -17,7 +17,7 @@ This document explains **step-by-step** how a vulnerability scan is created and 
 | 7 | **Backend** | Creates a scan task | `gmp.create_task(name, config_id, target_id, scanner_id, ...)` | Task name, scan config ID, target ID, scanner ID, comment | Registers a new scan task in OpenVAS |
 | 8 | **Backend** | Starts the scan task | `gmp.start_task(task_id)` | Task ID | Tells OpenVAS to begin the scan |
 | 9 | **Backend** | Returns scan info to frontend | - | `{ target, task_id, status: "started" }` | Backend responds with task ID and status |
-| 10 | **Frontend** | Adds scan to UI list, starts polling for status | - | Task ID, target | UI shows scan in list, starts polling backend for status |
+| 10 | **Frontend** | Adds scan to UI list, starts polling for status | - | Task ID, target | UI shows scan in list, starts polling backend for status. **Scan list is saved in browser localStorage and restored after refresh.** |
 | 11 | **Frontend** | Polls scan status | `fetch('http://localhost:8000/scan-status/{task_id}')` | Task ID | Every 5 seconds, asks backend for scan status |
 | 12 | **Backend** | Gets scan status from OpenVAS | `gmp.get_task(task_id)` | Task ID | Queries OpenVAS for the current status of the scan task |
 | 13 | **Backend** | Parses status from OpenVAS response | - | XML or object with `<status>` | Extracts status (e.g., Running, Done) and returns to frontend |
@@ -33,8 +33,8 @@ This document explains **step-by-step** how a vulnerability scan is created and 
 ## **Who is Responsible for Each Step?**
 
 - **User:** Initiates scan via the web UI.
-- **Frontend (script.js):** Handles user input, sends requests to backend, updates UI, manages scan list and polling.
-- **Backend (backend.py):** Handles all communication with OpenVAS, manages scan creation, status, and results, exposes API endpoints for frontend.
+- **Frontend (script.js):** Handles user input, sends requests to backend, updates UI, manages scan list and polling. **Saves scan history in localStorage and restores it after refresh.**
+- **Backend (backend.py):** Handles all communication with OpenVAS, manages scan creation, status, and results, exposes API endpoints for frontend. **Does not persist scan state between restarts.**
 - **OpenVAS (GVM):** Performs the actual vulnerability scan, manages targets, tasks, and reports.
 
 ---
