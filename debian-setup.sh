@@ -1,12 +1,11 @@
 #!/bin/bash
 
-# Setup script for deploying the vulnerability scanner web app on Ubuntu VM
-# This script sets up the complete environment on the Ubuntu VM
+# Combined setup and fix script for vulnerability scanner web app on Debian 12
 
 # Exit on any error
 set -e
 
-echo "Setting up vulnerability scanner web app on Ubuntu VM..."
+echo "Setting up vulnerability scanner web app on Debian 12..."
 
 # Check if running as root
 if [ "$EUID" -eq 0 ]; then
@@ -14,13 +13,21 @@ if [ "$EUID" -eq 0 ]; then
     exit 1
 fi
 
+# -------------------------------
+# SYSTEM SETUP
+# -------------------------------
+
 # Update system
 echo "Updating system packages..."
 sudo apt update && sudo apt upgrade -y
 
 # Install required packages
 echo "Installing required packages..."
-sudo apt install -y python3 python3-pip python3-venv nginx nmap git
+sudo apt install -y python3 python3-pip python3-venv nginx nmap git curl
+
+# -------------------------------
+# PROJECT SETUP
+# -------------------------------
 
 # Create project directory
 echo "Setting up project directory..."
@@ -34,7 +41,11 @@ source venv/bin/activate
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-pip install fastapi uvicorn python-gvm python-nmap
+pip install fastapi uvicorn python-gvm python-nmap pydantic
+
+# -------------------------------
+# BACKEND SERVICE SETUP
+# -------------------------------
 
 # Create systemd service for the backend
 echo "Creating systemd service for backend..."
@@ -59,6 +70,10 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable scan-backend
 sudo systemctl start scan-backend
+
+# -------------------------------
+# NGINX CONFIGURATION
+# -------------------------------
 
 # Configure nginx
 echo "Configuring nginx..."
@@ -91,25 +106,76 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl restart nginx
 
-# Set proper permissions for the user
-echo "Setting proper permissions for user..."
-sudo chown -R $USER:$USER /home/$USER/scan-app
+# -------------------------------
+# PERMISSIONS AND TESTING
+# -------------------------------
 
-# Fix permissions for nginx to access the files
-echo "Setting proper permissions for nginx..."
+# Set proper permissions for the user
+echo "Setting proper permissions..."
+sudo chown -R $USER:$USER /home/$USER/scan-app
 sudo chmod 755 /home/$USER/
 sudo chmod 755 /home/$USER/scan-app/
 sudo chown -R www-data:www-data /home/$USER/scan-app/
+
+# Test backend functionality
+echo "Testing backend functionality..."
+
+# Check if all imports work
+echo "Testing imports..."
+python3 -c "
+try:
+    from fastapi import FastAPI
+    from gvm.connections import TLSConnection
+    from gvm.protocols.gmp import Gmp
+    import nmap
+    print('✅ All imports successful')
+except ImportError as e:
+    print(f'❌ Import error: {e}')
+    exit(1)
+"
+
+if [ $? -ne 0 ]; then
+    echo "❌ Import test failed. Please check the error above."
+    exit 1
+fi
+
+# Test basic backend startup
+echo "Testing backend startup..."
+python3 -c "
+from backend import app
+print('✅ Backend app created successfully')
+"
+
+if [ $? -ne 0 ]; then
+    echo "❌ Backend startup test failed. Please check the error above."
+    exit 1
+fi
+
+# Restart services to ensure everything is fresh
+echo "Restarting services..."
+sudo systemctl restart scan-backend
+sudo systemctl restart nginx
+
+# Wait a moment for service to start
+sleep 3
+
+# Check service status
+echo "Checking service status..."
+sudo systemctl status scan-backend --no-pager
+
+# Test if backend is responding
+echo "Testing backend response..."
+curl -s http://localhost:8000/ || echo "❌ Backend not responding"
 
 echo "Setup complete!"
 echo ""
 echo "Next steps:"
 echo "1. Copy your project files to /home/$USER/scan-app/"
-echo "2. Make sure OpenVAS Docker container is running"
+echo "2. Make sure OpenVAS Docker container is running (if using)"
 echo "3. Access the web app at: http://$(hostname -I | awk '{print $1}')"
 echo "4. Check backend status: sudo systemctl status scan-backend"
 echo "5. Check nginx status: sudo systemctl status nginx"
 echo ""
 echo "To view logs:"
 echo "  Backend: sudo journalctl -u scan-backend -f"
-echo "  Nginx: sudo tail -f /var/log/nginx/access.log" 
+echo "  Nginx: sudo tail -f /var/log/nginx/access.log"

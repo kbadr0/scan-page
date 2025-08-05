@@ -16,15 +16,26 @@ The web application **must** run on the Ubuntu VM (not Windows) because:
 ```bash
 # From your Windows machine, copy files to Ubuntu VM
 scp -r /path/to/scan-page user@192.168.1.38:/home/user/scan-app
+#scp -r "C:\Users\msi\Desktop\stage ete\scan-page" ubuntu@192.168.1.38:/home/ubuntu/scan-app
 ```
 
-### Step 2: Run Setup Script
+### Step 2: Run Setup Script (FIXED)
 ```bash
-# On Ubuntu VM
+# On Ubuntu VM - IMPORTANT: Run as regular user, not root
 cd /home/user/scan-app
+
+# Make sure the script is executable
 chmod +x setup-ubuntu-vm.sh
+
+# Run the script (it will use sudo internally)
 ./setup-ubuntu-vm.sh
 ```
+
+**⚠️ Important Notes:**
+- **DO NOT** run the script as root (`sudo ./setup-ubuntu-vm.sh`)
+- Run as a regular user with sudo privileges
+- The script will handle sudo commands internally
+- If you get "Permission denied", make sure the file is executable: `chmod +x setup-ubuntu-vm.sh`
 
 ### Step 3: Start OpenVAS Container
 ```bash
@@ -147,28 +158,80 @@ docker logs openvas
 
 ### Common Issues
 
-1. **"Permission denied"**
+1. **"Permission denied" on setup script**
    ```bash
-   sudo chown -R $USER:$USER /home/$USER/scan-app
+   chmod +x setup-ubuntu-vm.sh
+   ./setup-ubuntu-vm.sh  # Run as regular user, not root
    ```
 
-2. **"Port already in use"**
+2. **"sudo: command not found"**
+   ```bash
+   # Make sure you're running as regular user with sudo privileges
+   whoami  # Should show your username, not root
+   sudo whoami  # Should work without password or prompt for password
+   ```
+
+3. **Backend import errors (most common)**
+   ```bash
+   # Run the fix script
+   chmod +x fix-backend.sh
+   ./fix-backend.sh
+   
+   # Or manually fix:
+   sudo systemctl stop scan-backend
+   cd /home/$USER/scan-app
+   source venv/bin/activate
+   pip install fastapi uvicorn python-gvm python-nmap pydantic
+   sudo systemctl restart scan-backend
+   ```
+
+4. **"Port already in use"**
    ```bash
    sudo netstat -tulpn | grep :8000
    sudo pkill -f uvicorn
    ```
 
-3. **"Nginx configuration error"**
+5. **"Nginx configuration error"**
    ```bash
    sudo nginx -t
    sudo systemctl restart nginx
    ```
 
-4. **"Backend not starting"**
+6. **"Backend not starting"**
    ```bash
    sudo journalctl -u scan-backend -f
    cd /home/$USER/scan-app && source venv/bin/activate && python backend.py
    ```
+
+7. **"Nginx can't access files"**
+   ```bash
+   # Fix permissions
+   sudo chmod 755 /home/$USER/
+   sudo chmod 755 /home/$USER/scan-app/
+   sudo chown -R www-data:www-data /home/$USER/scan-app/
+   ```
+
+### Quick Fix for Backend Issues
+
+If you see import errors in the backend logs, run this quick fix:
+
+```bash
+# On Ubuntu VM
+cd /home/ubuntu/scan-app
+
+# Make the fix script executable
+chmod +x fix-backend.sh
+
+# Run the fix script
+./fix-backend.sh
+```
+
+This script will:
+- Stop the backend service
+- Install/update all required Python packages
+- Test all imports
+- Restart the service
+- Verify it's working
 
 ### Network Configuration
 
